@@ -1,4 +1,24 @@
-#include <ArduinoBLE.h>
+/*
+ * MicroMod Weather Carrier Board Example
+ * 
+ * This sketch tests all of the weather sensors on the carrier board:
+ * atmospheric sensor - BME280, UV sensor - VEML6075, lightning detector - AS3935,
+ * soil moisture sensor, wind and rain meters.
+ * 
+ * Priyanka Makin @ SparkX Labs
+ * Original Creation Date: August 20, 2020
+ * 
+ * This code is Lemonadeware; if you see me (or any other SparkFun employee) at the
+ * local, and you've found our code helpful, please buy us a round!
+ * 
+ * Hardware Connections:
+ * Insert MicroMod Processor Board of your choice into the M.2 connector of the SparkFun Weather carrier
+ *  Screw into place
+ * Connect Weather carrier board to power useing USB-C cable
+ * Connect SparkFun Soil Moisture Sensor to Weather carrier using latching terminals
+ * Connect both wind and rain meters to Weather carrier using the RJ11 connectors
+ */
+
 #include <Wire.h>
 #include <SPI.h>
 #include "SparkFunBME280.h"
@@ -61,32 +81,9 @@ int intVal = 0;
 int noise = 2; // Value between 1-7 
 int disturber = 2; // Value between 1-10
 
-// UUIDs for the BLE service and characteristic
-#define BLE_UUID_SERVICE "12345678-1234-1234-1234-123456789ABC"
-#define BLE_UUID_CHARACTERISTIC "87654321-4321-4321-4321-CBA987654321"
-
-BLEService customService(BLE_UUID_SERVICE); // Create a BLE service
-BLEStringCharacteristic customCharacteristic(BLE_UUID_CHARACTERISTIC, BLERead | BLENotify, 20); // Create a BLE characteristic
-
 void setup() {
-  Serial.begin(115200); // Start serial communication at 9600 baud rate
+  Serial.begin(115200);
   while (!Serial);
-
-  if (!BLE.begin()) { // Initialize BLE
-    Serial.println("Starting BLE failed!");
-    while (1);
-  }
-
-  BLE.setLocalName("Arduino BLE"); // Set the local name
-  BLE.setAdvertisedService(customService); // Advertise the custom service
-  customService.addCharacteristic(customCharacteristic); // Add the characteristic
-  BLE.addService(customService); // Add the service
-
-  customCharacteristic.writeValue("Hello, BLE!"); // Set the initial value
-
-  BLE.advertise(); // Start advertising
-
-  Serial.println("Bluetooth device is now advertising");
 
   Serial.println("MicroMod Weather Carrier Board Test");
   Serial.println();
@@ -131,79 +128,68 @@ void setup() {
   lightning.setIndoorOutdoor(OUTDOOR); 
 }
 
+// the loop function runs over and over again forever
 void loop() {
-  BLEDevice central = BLE.central(); // Check for a central device connection
+  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
 
-  if (central) { // If a central device has connected
-    Serial.print("Connected to central: ");
-    Serial.println(central.address());
-    // Send data while the central device is connected
-    while (central.connected()) {
-      digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-      customCharacteristic.writeValue("Connected");
-      Serial.println();
-      Serial.print("Temperature: ");
-      Serial.println(tempSensor.readTempF(), 2);
-      Serial.print("Humidity: ");
-      Serial.println(tempSensor.readFloatHumidity(), 0);
-      Serial.print("Pressure: ");
-      Serial.println(tempSensor.readFloatPressure(), 0);
-      Serial.print("Altitude: ");
-      Serial.println(tempSensor.readFloatAltitudeFeet(), 1);
+  Serial.println();
+  Serial.print("Temperature: ");
+  Serial.println(tempSensor.readTempF(), 2);
+  Serial.print("Humidity: ");
+  Serial.println(tempSensor.readFloatHumidity(), 0);
+  Serial.print("Pressure: ");
+  Serial.println(tempSensor.readFloatPressure(), 0);
+  Serial.print("Altitude: ");
+  Serial.println(tempSensor.readFloatAltitudeFeet(), 1);
 
-      Serial.print("UV A, B, index: ");
-      Serial.println(String(uv.uva()) + ", " + String(uv.uvb()) + ", "+ String(uv.index()));
+  Serial.print("UV A, B, index: ");
+  Serial.println(String(uv.uva()) + ", " + String(uv.uvb()) + ", "+ String(uv.index()));
 
-      Serial.print("Soil Moisture = ");
-      Serial.println(readSoil());
+  Serial.print("Soil Moisture = ");
+  Serial.println(readSoil());
 
-      Serial.print("Wind direction: ");
-      Serial.print(getWindDirection());
-      Serial.println(" degrees");
-      //Check interrupt flags
-      if (rainFlag == true){
-        Serial.println("Rain click!");
-        rainFlag = false;
-      }
-      if (windFlag == true){
-        Serial.println("Wind click!");
-        windFlag = false;
-      }
-
-      // Hardware has alerted us to an event, now we read the interrupt register
-      if(digitalRead(lightningInt) == HIGH){
-        intVal = lightning.readInterruptReg();
-        if(intVal == NOISE_INT){
-          Serial.println("Noise."); 
-          // Too much noise? Uncomment the code below, a higher number means better
-          // noise rejection.
-          //lightning.setNoiseLevel(noise); 
-        }
-        else if(intVal == DISTURBER_INT){
-          Serial.println("Disturber."); 
-          // Too many disturbers? Uncomment the code below, a higher number means better
-          // disturber rejection.
-          //lightning.watchdogThreshold(disturber);  
-        }
-        else if(intVal == LIGHTNING_INT){
-          Serial.println("Lightning Strike Detected!"); 
-          // Lightning! Now how far away is it? Distance estimation takes into
-          // account any previously seen events in the last 15 seconds. 
-          byte distance = lightning.distanceToStorm(); 
-          Serial.print("Approximately: "); 
-          Serial.print(distance); 
-          Serial.println("km away!"); 
-          customCharacteristic.writeValue("Lightning detected!");
-        }
-      }
-
-      digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-
-      delay(3000);
-    }
-
-    Serial.println("Central device disconnected");
+  Serial.print("Wind direction: ");
+  Serial.print(getWindDirection());
+  Serial.println(" degrees");
+  //Check interrupt flags
+  if (rainFlag == true){
+    Serial.println("Rain click!");
+    rainFlag = false;
   }
+  if (windFlag == true){
+    Serial.println("Wind click!");
+    windFlag = false;
+  }
+
+  // Hardware has alerted us to an event, now we read the interrupt register
+  if(digitalRead(lightningInt) == HIGH){
+    intVal = lightning.readInterruptReg();
+    if(intVal == NOISE_INT){
+      Serial.println("Noise."); 
+      // Too much noise? Uncomment the code below, a higher number means better
+      // noise rejection.
+      //lightning.setNoiseLevel(noise); 
+    }
+    else if(intVal == DISTURBER_INT){
+      Serial.println("Disturber."); 
+      // Too many disturbers? Uncomment the code below, a higher number means better
+      // disturber rejection.
+      //lightning.watchdogThreshold(disturber);  
+    }
+    else if(intVal == LIGHTNING_INT){
+      Serial.println("Lightning Strike Detected!"); 
+      // Lightning! Now how far away is it? Distance estimation takes into
+      // account any previously seen events in the last 15 seconds. 
+      byte distance = lightning.distanceToStorm(); 
+      Serial.print("Approximately: "); 
+      Serial.print(distance); 
+      Serial.println("km away!"); 
+    }
+  }
+
+  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+
+  delay(3000);
 }
 
 int readSoil() {
@@ -239,3 +225,4 @@ int getWindDirection()
   if (adc < 990) return (270);
   return (-1);
 }
+
