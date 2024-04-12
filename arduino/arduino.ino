@@ -132,34 +132,38 @@ void setup() {
 void loop() {
   digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
 
-  Serial.println();
-  Serial.print("Temperature: ");
-  Serial.println(tempSensor.readTempF(), 2);
-  Serial.print("Humidity: ");
-  Serial.println(tempSensor.readFloatHumidity(), 0);
-  Serial.print("Pressure: ");
-  Serial.println(tempSensor.readFloatPressure(), 0);
+  // Serial.println();
+  // Serial.print("Temperature: ");
+  // Serial.println(tempSensor.readTempF(), 2);
+  // Serial.print("Humidity: ");
+  // Serial.println(tempSensor.readFloatHumidity(), 0);
+  // Serial.print("Pressure: ");
+  // Serial.println(tempSensor.readFloatPressure(), 0);
   Serial.print("Altitude: ");
   Serial.println(tempSensor.readFloatAltitudeFeet(), 1);
 
-  Serial.print("UV A, B, index: ");
-  Serial.println(String(uv.uva()) + ", " + String(uv.uvb()) + ", "+ String(uv.index()));
-
-  Serial.print("Soil Moisture = ");
-  Serial.println(readSoil());
-
-  Serial.print("Wind direction: ");
-  Serial.print(getWindDirection());
-  Serial.println(" degrees");
-  //Check interrupt flags
-  if (rainFlag == true){
-    Serial.println("Rain click!");
-    rainFlag = false;
+  if (tempSensor.readFloatAltitudeFeet() > 1134){
+    Serial.print("Mock Lightning: ");
+    Serial.println("42");
   }
-  if (windFlag == true){
-    Serial.println("Wind click!");
-    windFlag = false;
-  }
+  // Serial.print("UV A, B, index: ");
+  // Serial.println(String(uv.uva()) + ", " + String(uv.uvb()) + ", "+ String(uv.index()));
+
+  // Serial.print("Soil Moisture = ");
+  // Serial.println(readSoil());
+
+  // Serial.print("Wind direction: ");
+  // Serial.print(getWindDirection());
+  // Serial.println(" degrees");
+  // //Check interrupt flags
+  // if (rainFlag == true){
+  //   Serial.println("Rain click!");
+  //   rainFlag = false;
+  // }
+  // if (windFlag == true){
+  //   Serial.println("Wind click!");
+  //   windFlag = false;
+  // }
 
   // Hardware has alerted us to an event, now we read the interrupt register
   if(digitalRead(lightningInt) == HIGH){
@@ -177,16 +181,17 @@ void loop() {
       //lightning.watchdogThreshold(disturber);  
     }
     else if(intVal == LIGHTNING_INT){
-      Serial.println("Lightning Strike Detected!"); 
-      // Lightning! Now how far away is it? Distance estimation takes into
-      // account any previously seen events in the last 15 seconds. 
+      // Serial.println("Lightning Strike Detected!"); 
+      // // Lightning! Now how far away is it? Distance estimation takes into
+      // // account any previously seen events in the last 15 seconds. 
       byte distance = lightning.distanceToStorm(); 
-      Serial.print("Approximately: "); 
+      // Serial.print("Approximately: "); 
       Serial.print(distance); 
-      Serial.println("km away!"); 
+      // Serial.println("km away!"); 
     }
   }
-
+  Serial.println("Mock");
+  Serial.println("Mock");
   digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
 
   delay(3000);
